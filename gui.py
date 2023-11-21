@@ -1,5 +1,7 @@
 from tkinter import * 
-from worker import main,gloabl_queue
+from worker import main,gloabl_queue,exception_flag
+from tkinterTools import makeButton
+import time
 
 root = Tk()
 
@@ -8,7 +10,20 @@ root.title("Netmapper")
 root.configure(background="black")
 root.resizable(False, False)
 
-start = Button(text="Start", command=lambda: main(),  width=10, height=3, background="green", borderwidth=0, highlightcolor="green" ).grid(row=1,column=1)
+def checkForException():
+    if(exception_flag.is_set()):
+        Label(root,text="an Error occured", foreground="red", background="black").grid(row=2, column=2)
+        #time.sleep(6)
+        #root.destroy()
+    root.after(1000,checkForException)
 
 
-root.mainloop()
+checkForException()
+
+button = makeButton(root,"black",main,"Start",60,100,"green","white").grid(row=1,column=1)
+
+
+
+
+
+

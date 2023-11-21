@@ -10,7 +10,9 @@ from colorama import Fore
 from osFinder import calculateResponseTime
 
 
+exception_flag = threading.Event()
 gloabl_queue = Queue()
+
 
 def get_host_ip_subnetmask ():
     with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as sock:
@@ -73,20 +75,37 @@ def mainLoop(network_address,subnet_mask):
     network_address_string = [str(i) for i in network_address]
     network_address_string =  ".".join(network_address_string)
     network = ipaddress.IPv4Network(f"{network_address_string}/{subnet_mask}", strict=False)
-    max_threads = 10 
+    if(len(list(network.hosts()))<=257):
+        max_threads = 200
+    else:
+        max_threads = 10 
     threading.Thread(target=calculateResponseTime,args=(gloabl_queue,), daemon=True).start()
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
-     
         for host in network.hosts():
-            executor.submit(discover,ip_address=str(host),queue=gloabl_queue)
+            if(exception_flag.is_set()):
+                return
+            executor.submit(discover,ip_address=str(host),exception_flag=exception_flag,queue=gloabl_queue)
+        print("discovery complete")
             
 
 def main():
-    print(Fore.GREEN+"[+] getting native networking configuration")
-    ip,subnet = get_host_ip_subnetmask()
-    print(Fore.GREEN+"[+] getting network details")
-    network_add = binaryAnd(ip,subnet)
-    print(Fore.GREEN+"[+] starting discovery process")
-    mainLoop(network_add,subnet)
+    try:
+        print(Fore.GREEN+"[+] getting native networking configuration")
+        ip,subnet = get_host_ip_subnetmask()
+        print(Fore.GREEN+"[+] getting network details")
+        network_add = binaryAnd(ip,subnet)
+        print(Fore.GREEN+"[+] starting discovery process")
+        print(Fore.RESET)
+        mainLoop(network_add,subnet)
+    except KeyboardInterrupt:
+        exception_flag.set()
+        exit(1)
+    except Exception as e:
+        print("err",e)
+        exit(1)
+
+
+
+
 
 
