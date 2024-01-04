@@ -1,5 +1,5 @@
 from tkinter import * 
-from worker import main,gloabl_queue,exception_flag
+from worker import main,exception_flag
 from tkinterTools import makeButton
 import time
 

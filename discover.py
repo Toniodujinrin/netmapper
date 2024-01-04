@@ -28,7 +28,6 @@ def discover(ip_address, queue, exception_flag):
             except Exception:
                 hostName="N/A"
             if (mac):
-                print(mac)
                 company = get_mac_details(mac)
                 queue.put({"ip_address":ip_address,"mac_address":mac,"producer":company,"host_name":hostName})
                 

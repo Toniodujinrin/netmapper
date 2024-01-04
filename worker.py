@@ -8,10 +8,13 @@ from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 from colorama import Fore
 from osFinder import calculateResponseTime
+import time
+import sys
 
 
 exception_flag = threading.Event()
-gloabl_queue = Queue()
+processing_queue = Queue()
+viewing_queue = Queue()
 
 
 def get_host_ip_subnetmask ():
@@ -70,6 +73,16 @@ def binaryAnd(ip_address, subnet_mask):
         result_binary[index] = int(i,2)
     return (result_binary)
 
+def logger():
+    q=[]
+    while True:
+        q1 = list(processing_queue.queue)
+        if(len(q) != len(q1)):
+            print(q1)
+        q=q1
+        time.sleep(1)
+     
+            
 
 def mainLoop(network_address,subnet_mask):
     network_address_string = [str(i) for i in network_address]
@@ -79,13 +92,13 @@ def mainLoop(network_address,subnet_mask):
         max_threads = 200
     else:
         max_threads = 10 
-    threading.Thread(target=calculateResponseTime,args=(gloabl_queue,), daemon=True).start()
+    threading.Thread(target=calculateResponseTime,args=(processing_queue,), daemon=True).start()
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
         for host in network.hosts():
             if(exception_flag.is_set()):
                 return
-            executor.submit(discover,ip_address=str(host),exception_flag=exception_flag,queue=gloabl_queue)
-        print("discovery complete")
+            executor.submit(discover,ip_address=str(host),exception_flag=exception_flag,queue=processing_queue)
+        
             
 
 def main():
@@ -96,7 +109,11 @@ def main():
         network_add = binaryAnd(ip,subnet)
         print(Fore.GREEN+"[+] starting discovery process")
         print(Fore.RESET)
+        log = threading.Thread(target=logger)
+        log.start()
+
         mainLoop(network_add,subnet)
+        
     except KeyboardInterrupt:
         exception_flag.set()
         exit(1)
