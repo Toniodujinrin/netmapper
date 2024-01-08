@@ -3,18 +3,20 @@ import requests
 
 conf.verb = 0 
 
-def get_mac_details(mac):
-    try:
-        res = requests.get(f"https://www.macvendorlookup.com/api/v2/{mac}")
-        company = res.json()[0].get("company",0)
-        return company
-    except Exception as x:
-        return "N/A"
+# def get_mac_details(mac):
+#     try:
+#         res = requests.get(f"https://api.maclookup.app/v2/macs/{mac}?apiKey=01hke6r9qg9kqbgz6kcpcwmk6m01hke6sxtg6jtchas1txx4qe2reqazgkqduxcz")
+#         company =  res.json().get("company","N/A")
+#         if(company and len(company)> 1):
+#             return company
+#         return "N/A"
+#     except Exception as x:
+#         return "N/A"
     
 
 
 
-def discover(ip_address, queue, exception_flag):
+def discover(ip_address,viewing_array, exception_flag):
     if(not exception_flag.is_set()):
         try:
             mac = ""
@@ -28,8 +30,7 @@ def discover(ip_address, queue, exception_flag):
             except Exception:
                 hostName="N/A"
             if (mac):
-                company = get_mac_details(mac)
-                queue.put({"ip_address":ip_address,"mac_address":mac,"producer":company,"host_name":hostName})
+                viewing_array.append({"ip_address":ip_address,"mac_address":mac,"host_name":hostName})
                 
         except PermissionError:
             print("permision Error occured, run this program as root user")

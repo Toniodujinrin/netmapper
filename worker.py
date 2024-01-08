@@ -1,5 +1,4 @@
 import threading
-from queue import Queue
 import socket 
 import struct
 import fcntl
@@ -8,25 +7,27 @@ from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 from colorama import Fore
 from osFinder import calculateResponseTime
-import time
 import sys
+from time import sleep
+from get_mac_details import get_mac_details
+from port_scanner import get_open_ports
+from tabulate import tabulate
 
 
+options = {}
 exception_flag = threading.Event()
-processing_queue = Queue()
-viewing_queue = Queue()
+data_lock = threading.Lock()
+viewing_array = []
+
 
 
 def get_host_ip_subnetmask ():
     with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as sock:
         sock.connect(("8.8.8.8",80))
         ip,port = sock.getsockname()
-        
-
         subnet_mask = fcntl.ioctl(sock.fileno(), 0x891b, struct.pack(
         '256s', "wlan0".encode()))[20:24]
         subnet_mask = socket.inet_ntoa(subnet_mask)
-
         sock.close()
         return (ip,subnet_mask)
 
@@ -74,44 +75,53 @@ def binaryAnd(ip_address, subnet_mask):
     return (result_binary)
 
 def logger():
-    q=[]
     while True:
-        q1 = list(processing_queue.queue)
-        if(len(q) != len(q1)):
-            print(q1)
-        q=q1
-        time.sleep(1)
+        sys.stdout.write("\033[H\033[J")
+        header = ["ip_address","mac_address", "producer","host_name","average_response_time","ttl","open_ports"]
+        res = []
+        for i in viewing_array:
+            res.append(list(i.values()))
+            # string = f"{i.get('ip_address','loading')}    {i.get('mac_address','loading')}    {i.get('producer','loading')}    {i.get('host_name','loading')}    {i.get('average_response_time','loading')}    {i.get('ttl','loading')}    {i.get('open_ports','loading')} \n"
+            # final_string += string
+        res.insert(0,header)
+        print(tabulate(res))
+        sleep(1)
+        
+
+
+
+
+       
      
+
             
 
 def mainLoop(network_address,subnet_mask):
     network_address_string = [str(i) for i in network_address]
     network_address_string =  ".".join(network_address_string)
     network = ipaddress.IPv4Network(f"{network_address_string}/{subnet_mask}", strict=False)
-    if(len(list(network.hosts()))<=257):
-        max_threads = 200
-    else:
-        max_threads = 10 
-    threading.Thread(target=calculateResponseTime,args=(processing_queue,), daemon=True).start()
-    with ThreadPoolExecutor(max_workers=max_threads) as executor:
+    threading.Thread(target=calculateResponseTime,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
+    threading.Thread(target=get_mac_details,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
+    threading.Thread(target=get_open_ports, kwargs={"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=False).start()
+    with ThreadPoolExecutor(max_workers=options['max_threads']) as executor:
         for host in network.hosts():
             if(exception_flag.is_set()):
                 return
-            executor.submit(discover,ip_address=str(host),exception_flag=exception_flag,queue=processing_queue)
+            executor.submit(discover,ip_address=str(host),exception_flag=exception_flag,viewing_array=viewing_array)
         
             
 
 def main():
     try:
+        print(options)
         print(Fore.GREEN+"[+] getting native networking configuration")
         ip,subnet = get_host_ip_subnetmask()
         print(Fore.GREEN+"[+] getting network details")
         network_add = binaryAnd(ip,subnet)
         print(Fore.GREEN+"[+] starting discovery process")
         print(Fore.RESET)
-        log = threading.Thread(target=logger)
-        log.start()
-
+        if(options['should_log']):
+             threading.Thread(target=logger, daemon=True).start()
         mainLoop(network_add,subnet)
         
     except KeyboardInterrupt:
@@ -119,6 +129,7 @@ def main():
         exit(1)
     except Exception as e:
         print("err",e)
+        exception_flag.set()
         exit(1)
 
 

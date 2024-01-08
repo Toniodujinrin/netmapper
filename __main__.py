@@ -1,5 +1,5 @@
 import  pyfiglet 
-from worker import main
+from worker import main, options
 import argparse
 from gui import root
 import os
@@ -55,15 +55,32 @@ def commence():
     global gui
     global discover
 
+    if (timing):
+        if(timing == '1'):
+            options['max_threads'] = 50
+        elif(timing == '2'):
+            options['max_threads'] = 100
+        elif(timing == '3'):
+            options['max_threads'] = 200
+        else:
+            print(Fore.RED,"[x] Timing flag must be either 1, 2 or 3 ...")
+            print(Fore.RESET)
+            print(usage)
+            exit(1)
+    else:
+        options['max_threads'] = 100
+        
+
     if(gui and discover):
         print(Fore.RED,"[x] You cannot run gui and cli simultaneously, exiting ...")
         print(Fore.RESET)
         exit(1)
     if(gui):
+        options['should_log'] = False 
         root.mainloop()
     elif(discover):
-        main()
-        
+        options['should_log'] = True
+        main()  
     else:
         print(Fore.RED,"[x] No requests made, exiting ...")
         print(Fore.RESET)

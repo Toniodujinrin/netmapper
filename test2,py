@@ -1,0 +1,14 @@
+import socket 
+ip = "140.193.240.1"
+end_port_range = 10_000
+
+ports = []
+for i in range(1,end_port_range):  
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.1)
+        res = sock.connect_ex((ip,i))
+        if (res == 0 or res == 11 ): 
+            ports.append(str(i))
+port_string = ",".join(ports)
+print(port_string)
+        
