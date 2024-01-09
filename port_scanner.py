@@ -1,4 +1,3 @@
-# port scanning test 
 import socket 
 
 end_port_range = 1000
@@ -16,7 +15,6 @@ def get_open_ports(exception_flag, viewing_array):
                     res = sock.connect_ex((ip,i))
                     if (res == 0 or res == 11 ): 
                         ports.append(str(i))
-            print(ports)
             if(len(ports) > 0 and len(ports)<10):
                 host["open_ports"] = ",".join(ports)
             elif(len(ports)>10):

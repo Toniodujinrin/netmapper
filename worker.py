@@ -6,7 +6,7 @@ from discover import discover
 from concurrent.futures import ThreadPoolExecutor
 import ipaddress
 from colorama import Fore
-from osFinder import calculateResponseTime
+from get_responses import calculateResponseTime
 import sys
 from time import sleep
 from get_mac_details import get_mac_details
@@ -77,12 +77,17 @@ def binaryAnd(ip_address, subnet_mask):
 def logger():
     while True:
         sys.stdout.write("\033[H\033[J")
-        header = ["ip_address","mac_address", "producer","host_name","average_response_time","ttl","open_ports"]
+        header = options["header"]
         res = []
-        for i in viewing_array:
-            res.append(list(i.values()))
-            # string = f"{i.get('ip_address','loading')}    {i.get('mac_address','loading')}    {i.get('producer','loading')}    {i.get('host_name','loading')}    {i.get('average_response_time','loading')}    {i.get('ttl','loading')}    {i.get('open_ports','loading')} \n"
-            # final_string += string
+        for viewing_output in viewing_array:
+            #sort output to conform to logging order 
+            sorted_output = [""]*len(header)
+            output  = viewing_output.items()
+            for title,value in output: 
+                for i in range(0,len(header)):
+                    if(header[i]==title):
+                        sorted_output[i] = value
+            res.append(sorted_output)
         res.insert(0,header)
         print(tabulate(res))
         sleep(1)
@@ -100,9 +105,12 @@ def mainLoop(network_address,subnet_mask):
     network_address_string = [str(i) for i in network_address]
     network_address_string =  ".".join(network_address_string)
     network = ipaddress.IPv4Network(f"{network_address_string}/{subnet_mask}", strict=False)
-    threading.Thread(target=calculateResponseTime,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
-    threading.Thread(target=get_mac_details,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
-    threading.Thread(target=get_open_ports, kwargs={"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=False).start()
+    if(options["response"]):
+        threading.Thread(target=calculateResponseTime,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
+    if(options["hardware"]):
+        threading.Thread(target=get_mac_details,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
+    if(options["scan"]):
+        threading.Thread(target=get_open_ports, kwargs={"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=False).start()
     with ThreadPoolExecutor(max_workers=options['max_threads']) as executor:
         for host in network.hosts():
             if(exception_flag.is_set()):

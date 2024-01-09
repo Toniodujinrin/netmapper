@@ -1,20 +1,8 @@
 from scapy.all import *
-import requests
-
+#set verbosity 
 conf.verb = 0 
 
-# def get_mac_details(mac):
-#     try:
-#         res = requests.get(f"https://api.maclookup.app/v2/macs/{mac}?apiKey=01hke6r9qg9kqbgz6kcpcwmk6m01hke6sxtg6jtchas1txx4qe2reqazgkqduxcz")
-#         company =  res.json().get("company","N/A")
-#         if(company and len(company)> 1):
-#             return company
-#         return "N/A"
-#     except Exception as x:
-#         return "N/A"
-    
-
-
+#perofrom mac address dicovery 
 
 def discover(ip_address,viewing_array, exception_flag):
     if(not exception_flag.is_set()):
