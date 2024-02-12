@@ -1,7 +1,8 @@
 import threading
 import socket 
+import os 
+import subprocess
 import struct
-import fcntl
 from discover import discover
 from concurrent.futures import ThreadPoolExecutor
 import ipaddress
@@ -12,6 +13,11 @@ from time import sleep
 from get_mac_details import get_mac_details
 from port_scanner import get_open_ports
 from tabulate import tabulate
+
+try:
+    import fcntl
+except ImportError:
+    pass
 
 
 options = {}
@@ -25,9 +31,18 @@ def get_host_ip_subnetmask ():
     with socket.socket(socket.AF_INET,socket.SOCK_DGRAM) as sock:
         sock.connect(("8.8.8.8",80))
         ip,port = sock.getsockname()
-        subnet_mask = fcntl.ioctl(sock.fileno(), 0x891b, struct.pack(
-        '256s', "wlan0".encode()))[20:24]
-        subnet_mask = socket.inet_ntoa(subnet_mask)
+        subnet_mask = ""
+        if(os.name == "nt"):
+            res = subprocess.run("ipconfig",capture_output=True )
+            res = res.stdout.decode().replace(". ","").split("\n")
+            for item in res:
+                if "Subnet Mask" in item:
+                    subnet_mask = item 
+            subnet_mask = subnet_mask.replace("Subnet Mask :","").strip()
+        else:
+            subnet_mask = fcntl.ioctl(sock.fileno(), 0x891b, struct.pack(
+            '256s', "wlan0".encode()))[20:24]
+            subnet_mask = socket.inet_ntoa(subnet_mask)
         sock.close()
         return (ip,subnet_mask)
 
@@ -75,8 +90,11 @@ def binaryAnd(ip_address, subnet_mask):
     return (result_binary)
 
 def logger():
-    while True:
-        sys.stdout.write("\033[H\033[J")
+    while not exception_flag.is_set():
+        if(os.name == "nt"):
+            os.system("clear")
+        else:
+            os.system("cls")
         header = options["header"]
         res = []
         for viewing_output in viewing_array:
@@ -105,6 +123,8 @@ def mainLoop(network_address,subnet_mask):
     network_address_string = [str(i) for i in network_address]
     network_address_string =  ".".join(network_address_string)
     network = ipaddress.IPv4Network(f"{network_address_string}/{subnet_mask}", strict=False)
+    if(options['should_log']):
+             threading.Thread(target=logger, daemon=True).start()
     if(options["response"]):
         threading.Thread(target=calculateResponseTime,kwargs={"data_lock":data_lock ,"exception_flag":exception_flag, "viewing_array":viewing_array}, daemon=True).start()
     if(options["hardware"]):
@@ -128,8 +148,7 @@ def main():
         network_add = binaryAnd(ip,subnet)
         print(Fore.GREEN+"[+] starting discovery process")
         print(Fore.RESET)
-        if(options['should_log']):
-             threading.Thread(target=logger, daemon=True).start()
+        sleep(3)
         mainLoop(network_add,subnet)
         
     except KeyboardInterrupt:

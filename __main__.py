@@ -11,10 +11,12 @@ import sys
 
 print(pyfiglet.Figlet().renderText("Netmapper"))
 
-if(not os.getuid() ==0 ):
+if(os.name != "nt" and os.getuid() != 0 ):
     print(Fore.RED,"[x] You must have root priveledges to run this application, exiting ...")
     print(Fore.RESET)
     exit()
+
+
 
 usage = """
 
@@ -32,12 +34,12 @@ Usage:
 
 -o -os: perform os detection(still in production)
 
--h -hard: gather hardware details
+-m -hard: gather hardware details
 
 Example: python3 netmapper -d -t 3 -s -r -o -h
 
 """
-timing = 1
+timing = None
 gui = None
 discover = None
 hardware = None 
@@ -87,7 +89,6 @@ def commence():
     global hardware
     global scan 
     global response
-    print(hardware, scan, response)
     
     options["header"] = ["ip_address","mac_address","host_name"]
     options["scan"] = False
@@ -102,10 +103,9 @@ def commence():
         elif(timing == "3"):
             options['max_threads'] = 200
         else:
-            print(Fore.RED,"[x] Timing flag must be either 1, 2 or 3 ...")
+            print(Fore.LIGHTYELLOW_EX,"[-] Timing flag not set, using default timing of 1")
+            options['max_threads'] = 50
             print(Fore.RESET)
-            print(usage)
-            exit(1)
     else:
         options['max_threads'] = 100
     if(hardware):
