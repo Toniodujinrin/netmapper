@@ -91,24 +91,20 @@ def binaryAnd(ip_address, subnet_mask):
 
 def logger():
     while not exception_flag.is_set():
-        if(os.name == "nt"):
-            os.system("clear")
-        else:
-            os.system("cls")
+        os.system("clear")
         header = options["header"]
-        res = []
+        rows = []
         for viewing_output in viewing_array:
             #sort output to conform to logging order 
             sorted_output = [""]*len(header)
-            output  = viewing_output.items()
-            for title,value in output: 
+            for title,value in viewing_output.items(): 
                 for i in range(0,len(header)):
                     if(header[i]==title):
                         sorted_output[i] = value
-            res.append(sorted_output)
-        res.insert(0,header)
-        print(tabulate(res))
-        sleep(1)
+            rows.append(sorted_output)
+        rows.insert(0,header)
+        print(tabulate(rows))
+        sleep(5)
         
 
 
@@ -141,7 +137,6 @@ def mainLoop(network_address,subnet_mask):
 
 def main():
     try:
-        print(options)
         print(Fore.GREEN+"[+] getting native networking configuration")
         ip,subnet = get_host_ip_subnetmask()
         print(Fore.GREEN+"[+] getting network details")

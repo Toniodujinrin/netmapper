@@ -55,6 +55,7 @@ def get_args():
     arguments = sys.argv[1:]
     if (len(arguments) == 0):
         print(usage)
+        exit(0)
     parser = argparse.ArgumentParser()
     parser.add_argument("-g","-gui",help="open gui interface",action="store_true")
     parser.add_argument('-t',"-timing",help="set timing")
@@ -103,11 +104,13 @@ def commence():
         elif(timing == "3"):
             options['max_threads'] = 200
         else:
-            print(Fore.LIGHTYELLOW_EX,"[-] Timing flag not set, using default timing of 1")
+            print(Fore.LIGHTYELLOW_EX,"[-] Invalid timing value set, using default timing of 1")
             options['max_threads'] = 50
             print(Fore.RESET)
     else:
-        options['max_threads'] = 100
+        print(Fore.LIGHTYELLOW_EX,"[-] Timing flag not set, using default timing of 1")
+        options['max_threads'] = 50
+        print(Fore.RESET)
     if(hardware):
         options["header"].append("producer")
         options["hardware"] = True 
