@@ -24,6 +24,7 @@ def discover(ip_address,viewing_array, exception_flag):
             print("permision Error occured, run this program as root user")
             exception_flag.set()
             exit(1)
+     
         except Exception as e :
             print(e)
             return 

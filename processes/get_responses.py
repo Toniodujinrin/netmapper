@@ -1,13 +1,14 @@
 import subprocess
 import re
 import os 
-def calculateResponseTime(exception_flag, viewing_array, data_lock):
+import time
+
+def calculate_response_time(exception_flag, viewing_array, discovery_finished):
     counter = 0 
-    while not exception_flag.is_set():
+    while not exception_flag.is_set() and not (discovery_finished.is_set() and counter == len(viewing_array)):
         if(len(viewing_array) > counter):
             host = viewing_array[counter]
             try:
-               # data_lock.acquire(blocking=False)
                 ip_address = host.get("ip_address",0)
                 ping_process = None 
                 #os specific pings 
@@ -35,21 +36,22 @@ def calculateResponseTime(exception_flag, viewing_array, data_lock):
                         response_times = re.findall(
                             r"time=([\d.]+) ms", ping_process.stdout)
 
-                    response_times = [float(x) for x in response_times]
+                    response_times = [int(float(x)) for x in response_times]
                     sum = 0 
                     for i in response_times:
                         sum += i
                     if(sum):
                         sum /= len(response_times)
                     host["average_response_time"]=sum
-                    if(len(ttl)):
-                        host["ttl"] = ttl[0]
-                    else:
-                        host["ttl"] = "N/A"
-               # data_lock.release()
+                    host["ttl"] =  ttl[0] if len(ttl) else "N/A"
+                  
             except Exception as e :
                 print(e)
+                return 
             counter += 1 
+    print("exiting")
+    
+            
             
     
         

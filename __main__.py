@@ -1,11 +1,11 @@
 import  pyfiglet 
-from worker import main, options
 import argparse
-from gui import root
 import os
 from colorama import Fore
-from gui import root
 import sys
+
+from interfaces.gui import root
+from worker import main, options
 
 
 
@@ -79,7 +79,7 @@ def get_args():
             elif(arg[0] == "r"):
                 response = arg[1]
     except Exception as e:
-        print(e)
+        print(usage)
 
 
 

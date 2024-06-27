@@ -1,9 +1,10 @@
 import requests 
 
 
-def get_mac_details(data_lock, viewing_array,exception_flag):
+def get_mac_details( viewing_array,exception_flag, discovery_finished):
     counter = 0 
-    while not exception_flag.is_set():
+    
+    while not exception_flag.is_set() and not (discovery_finished.is_set() and counter == len(viewing_array)):
         if(len(viewing_array) > counter):
             host = viewing_array[counter]
             try:
